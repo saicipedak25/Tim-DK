@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoring — DK SD5 Lempuyang 3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0B1F3A;
+    --navy-mid: #1A3558;
+    --gold: #E8A020;
+    --gold-light: #FDF3DC;
+    --white: #FFFFFF;
+    --gray-bg: #F0F4F8;
+    --gray-mid: #8A9BB0;
+    --gray-light: #E8EDF2;
+    --green: #16A34A;
+    --green-bg: #F0FDF4;
+    --green-light: #DCFCE7;
+    --red-soft: #FEF2F2;
+    --red-text: #DC2626;
+    --font-display: 'Space Mono', monospace;
+    --font-body: 'Space Grotesk', sans-serif;
+  }
+
+  body {
+    background: var(--gray-bg);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 0 0 48px;
+  }
+
+  /* ── HEADER ── */
+  .page-header {
+    background: var(--navy);
+    padding: 20px 24px 18px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .header-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .header-sub {
+    font-size: 12px;
+    color: var(--gray-mid);
+    margin-top: 2px;
+  }
+
+  .btn-refresh {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-family: var(--font-display);
+    font-size: 11px;
+    color: var(--white);
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .btn-refresh:hover { background: rgba(255,255,255,0.14); }
+
+  .last-updated {
+    font-size: 11px;
+    color: var(--gray-mid);
+    font-family: var(--font-display);
+    text-align: right;
+    margin-top: 2px;
+  }
+
+  /* ── CONTENT ── */
+  .content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px 16px 0;
+  }
+
+  /* ── SUMMARY STRIP ── */
+  .summary-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+  }
+
+  .stat-num.green { color: var(--green); }
+  .stat-num.red   { color: var(--red-text); }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--gray-mid);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-mid);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 10px;
+    margin-top: 24px;
+  }
+
+  /* ── KLASEMEN ── */
+  .klasemen-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .peran-row {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .peran-rank {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gray-mid);
+    width: 24px;
+    flex-shrink: 0;
+    text-align: center;
+  }
+
+  .peran-rank.top { color: var(--gold); }
+
+  .peran-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--navy);
+    flex: 1;
+  }
+
+  .peran-bar-wrap {
+    flex: 2;
+    height: 8px;
+    background: var(--gray-light);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .peran-bar {
+    height: 100%;
+    background: var(--green);
+    border-radius: 99px;
+    transition: width 0.6s ease;
+  }
+
+  .peran-count {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+    min-width: 28px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .peran-zero .peran-bar { background: var(--gray-light); }
+  .peran-zero .peran-count { color: var(--gray-mid); }
+  .peran-zero .peran-name { color: var(--gray-mid); font-weight: 400; }
+
+  /* ── ABSENSI ── */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .tab-btn {
+    background: var(--white);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-mid);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tab-btn.active {
+    border-color: var(--green);
+    color: var(--green);
+    background: var(--green-bg);
+  }
+
+  .nama-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .nama-chip {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--navy);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nama-chip.sudah {
+    background: var(--green-light);
+    color: #15803D;
+  }
+
+  .nama-chip.belum {
+    background: var(--red-soft);
+    color: #991B1B;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot.sudah { background: var(--green); }
+  .dot.belum { background: var(--red-text); }
+
+  /* ── LOADING / EMPTY ── */
+  .loading-text {
+    text-align: center;
+    color: var(--gray-mid);
+    font-size: 14px;
+    padding: 32px 0;
+    font-family: var(--font-display);
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--gray-light);
+    border-top-color: var(--navy);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .kelas-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-mid);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 16px 0 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="header-inner">
+    <div>
+      <div class="header-title">Monitoring DK SD5</div>
+      <div class="header-sub">Lempuyang 3 · Klasemen Peran & Absensi</div>
+    </div>
+    <div style="text-align:right">
+      <button class="btn-refresh" onclick="loadData()">↻ Refresh</button>
+      <div class="last-updated" id="last-updated">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Summary -->
+  <div class="summary-strip">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-total">—</div>
+      <div class="stat-label">Total OTS</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num green" id="stat-sudah">—</div>
+      <div class="stat-label">Sudah Isi</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num red" id="stat-belum">—</div>
+      <div class="stat-label">Belum Isi</div>
+    </div>
+  </div>
+
+  <!-- Klasemen -->
+  <div class="section-title">Klasemen per Peran</div>
+  <div class="klasemen-list" id="klasemen-list">
+    <div class="loading-text"><span class="spinner"></span>Memuat data...</div>
+  </div>
+
+  <!-- Absensi -->
+  <div class="section-title">Status Absensi</div>
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-semua"  onclick="showTab('semua')">Semua</button>
+    <button class="tab-btn"        id="tab-sudah"  onclick="showTab('sudah')">Sudah Isi</button>
+    <button class="tab-btn"        id="tab-belum"  onclick="showTab('belum')">Belum Isi</button>
+  </div>
+  <div id="absensi-area">
+    <div class="loading-text"><span class="spinner"></span>Memuat data...</div>
+  </div>
+
+</div>
+
+<script>
+const SCRIPT_URL = 'GANTI_DENGAN_URL_APPS_SCRIPT_KAMU';
+
+const SEMUA_SISWA = {
+  Granita: ['Ahsan','Aisha','Al Fatih','Asyifa','Faqih','Jehaan','Kala','Karen','Kiyan','Nadja','Nasyita','Qalesya','Rafani','Raffasya','Rhakan','Tasha','Tidar','Umar','Zafran','Zaid','Zayn','Zio'],
+  Kuarsa:  ['Adzkiya','Affan','Ahnaf','Alisha','Arkan','Arya','Azka','Bintang','Bumi','Deva','Ghani','Ghazi','Hana','Hudzalfah','Husna','Najmah','Nisa','Qonita','Rahva','Rayi','Sami','Shawwan'],
+  Humara:  ['Abyan','Aka','Aimar','Aleena','Azi','Azzam','Ega','Fariq','Fathimah','Fatih','Ica','Kea','Khaira','Miqdad','Mireya','Nayra','Rafie','Salim','Salman','Umar Adli','Wildan']
+};
+
+const SEMUA_PERAN = [
+  'Bendahara','Desain dan Medsos','Dokumentasi','Family Gathering',
+  'Fund Raising','Komunikasi dan SAIMart','Konsumsi',
+  'Parenting & Rolling Book','Perlengkapan & Aset',
+  'PJBL 1','PJBL 2','PJBL 3','PJBL 4',
+  'Proposal dan Sponsorship','Sosial dan Menabung','Transportasi'
+];
+
+const SEMUA_NAMA = Object.values(SEMUA_SISWA).flat();
+const TOTAL = SEMUA_NAMA.length;
+
+let currentData = null;
+let activeTab = 'semua';
+
+async function loadData() {
+  document.getElementById('klasemen-list').innerHTML = '<div class="loading-text"><span class="spinner"></span>Memuat data...</div>';
+  document.getElementById('absensi-area').innerHTML   = '<div class="loading-text"><span class="spinner"></span>Memuat data...</div>';
+
+  try {
+    const res  = await fetch(`${SCRIPT_URL}?action=getAbsensi&_=${Date.now()}`);
+    const data = await res.json();
+    currentData = data.rows || [];
+  } catch(e) {
+    currentData = [];
+  }
+
+  renderAll();
+  const now = new Date();
+  document.getElementById('last-updated').textContent =
+    'Update: ' + now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+
+function renderAll() {
+  // Deduplicate: ambil isian terakhir per nama
+  const latest = {};
+  currentData.forEach(row => {
+    latest[row.nama] = row; // overwrite, jadi yang terakhir menang
+  });
+  const rows = Object.values(latest);
+
+  // Hitung peran — tiap orang punya peran1 dan peran2
+  const peranCount = {};
+  SEMUA_PERAN.forEach(p => peranCount[p] = 0);
+  rows.forEach(r => {
+    if (r.peran1 && peranCount[r.peran1] !== undefined) peranCount[r.peran1]++;
+    if (r.peran2 && peranCount[r.peran2] !== undefined) peranCount[r.peran2]++;
+  });
+
+  // Sorted peran
+  const sorted = [...SEMUA_PERAN].sort((a,b) => peranCount[b] - peranCount[a]);
+  const maxCount = sorted.length > 0 ? Math.max(...sorted.map(p => peranCount[p]), 1) : 1;
+
+  // Sudah & belum
+  const sudahNama = new Set(rows.map(r => r.nama));
+  const sudahList = SEMUA_NAMA.filter(n => sudahNama.has(n));
+  const belumList = SEMUA_NAMA.filter(n => !sudahNama.has(n));
+
+  // Summary
+  document.getElementById('stat-total').textContent = TOTAL;
+  document.getElementById('stat-sudah').textContent = sudahList.length;
+  document.getElementById('stat-belum').textContent = belumList.length;
+
+  // Klasemen
+  const kl = document.getElementById('klasemen-list');
+  kl.innerHTML = sorted.map((peran, i) => {
+    const cnt   = peranCount[peran];
+    const pct   = Math.round((cnt / maxCount) * 100);
+    const isTop = i < 3 && cnt > 0;
+    const zero  = cnt === 0;
+    return `
+      <div class="peran-row${zero ? ' peran-zero' : ''}">
+        <div class="peran-rank${isTop ? ' top' : ''}">${i+1}</div>
+        <div class="peran-name">${peran}</div>
+        <div class="peran-bar-wrap">
+          <div class="peran-bar" style="width:${pct}%"></div>
+        </div>
+        <div class="peran-count">${cnt}</div>
+      </div>`;
+  }).join('');
+
+  // Absensi
+  currentData = rows; // store deduplicated
+  showTab(activeTab, sudahList, belumList);
+}
+
+function showTab(tab, sudahList, belumList) {
+  activeTab = tab;
+  ['semua','sudah','belum'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+
+  // Kalau dipanggil dari tab button (bukan renderAll), pakai currentData
+  if (!sudahList) {
+    const sudahNama = new Set(currentData.map(r => r.nama));
+    sudahList = SEMUA_NAMA.filter(n => sudahNama.has(n));
+    belumList = SEMUA_NAMA.filter(n => !sudahNama.has(n));
+  }
+
+  const area = document.getElementById('absensi-area');
+
+  function renderByKelas(namaList, type) {
+    if (namaList.length === 0) {
+      return `<div class="loading-text" style="padding:16px 0">Tidak ada data</div>`;
+    }
+    return Object.entries(SEMUA_SISWA).map(([kelas, siswaKelas]) => {
+      const filtered = siswaKelas.filter(n => namaList.includes(n));
+      if (filtered.length === 0) return '';
+      return `
+        <div class="kelas-label">${kelas} (${filtered.length})</div>
+        <div class="nama-grid">
+          ${filtered.map(n => `
+            <div class="nama-chip ${type}">
+              <span class="dot ${type}"></span>
+              OTS ${n}
+            </div>`).join('')}
+        </div>`;
+    }).join('');
+  }
+
+  if (tab === 'semua') {
+    area.innerHTML =
+      '<div class="kelas-label" style="color:#16A34A">Sudah Isi (' + sudahList.length + ')</div>' +
+      (sudahList.length ? '<div class="nama-grid">' + sudahList.map(n =>
+        `<div class="nama-chip sudah"><span class="dot sudah"></span>OTS ${n}</div>`).join('') + '</div>' : '') +
+      '<div class="kelas-label" style="color:#DC2626;margin-top:16px">Belum Isi (' + belumList.length + ')</div>' +
+      (belumList.length ? '<div class="nama-grid">' + belumList.map(n =>
+        `<div class="nama-chip belum"><span class="dot belum"></span>OTS ${n}</div>`).join('') + '</div>' : '');
+  } else if (tab === 'sudah') {
+    area.innerHTML = renderByKelas(sudahList, 'sudah');
+  } else {
+    area.innerHTML = renderByKelas(belumList, 'belum');
+  }
+}
+
+loadData();
+// Auto-refresh tiap 30 detik
+setInterval(loadData, 30000);
+</script>
+
+</body>
+</html>
